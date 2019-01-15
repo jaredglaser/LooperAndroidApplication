@@ -20,15 +20,13 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
 
-    <SurfaceView
-        android:id="@+id/surfaceView"
-        android:layout_width="263dp"
-        android:layout_height="442dp"
+    <VideoView
+        android:id="@+id/videoView"
+        android:layout_width="522dp"
+        android:layout_height="450dp"
         android:layout_marginStart="8dp"
-        android:layout_marginLeft="8dp"
         android:layout_marginTop="8dp"
         android:layout_marginEnd="8dp"
-        android:layout_marginRight="8dp"
         android:layout_marginBottom="8dp"
         app:layout_constraintBottom_toTopOf="@+id/btnViewFinder"
         app:layout_constraintEnd_toEndOf="parent"

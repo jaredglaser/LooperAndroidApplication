@@ -7,10 +7,12 @@ import android.os.Bundle;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
+import android.widget.MediaController;
 import android.widget.VideoView;
 import android.widget.Button;
 import 	android.content.Intent;
 import 	android.net.Uri;
+import android.media.MediaPlayer.*;
 import android.media.MediaPlayer;
 import 	android.content.Context;
 import 	android.util.*;
@@ -27,47 +29,33 @@ public class Viewfinder extends AppCompatActivity {
     Uri videoFileUri;
     Context context;
     SurfaceHolder surfaceHolder;
-    MediaPlayer mp;
+    //MediaPlayer mp;
+    MediaController mc;
     String videoPath = "";
+    VideoView videoView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_viewfinder);
         context = getApplicationContext();
+        mc = new MediaController(this);
+
         Button btnCamera = (Button) findViewById(R.id.btnViewFinder);
-        SurfaceView surfaceView = (SurfaceView) findViewById(R.id.surfaceView);
-        surfaceHolder = surfaceView.getHolder();
+        //SurfaceView surfaceView = (SurfaceView) findViewById(R.id.surfaceView);
+        videoView = findViewById(R.id.videoView);
+        //surfaceHolder = surfaceView.getHolder();
         //surfaceHolder.addCallback(Viewfinder.this);
         //set looping true (may have to look into other options depending on memory usage??
-        mp = new MediaPlayer();
+        //mp = new MediaPlayer();
 
-        //handle issue with surface being released
-        surfaceHolder.addCallback(new SurfaceHolder.Callback() {
-            @Override
-            public void surfaceCreated(SurfaceHolder holder) {
-                mp.setDisplay(holder);
-            }
 
-            @Override
-            public void surfaceChanged(SurfaceHolder holder, int format, int width,
-                                       int height) {
-
-            }
-
-            @Override
-            public void surfaceDestroyed(SurfaceHolder holder) {
-
-            }
-        });
-
-        mp.setLooping(true);
+        // mp.setLooping(true);
 
         btnCamera.setOnClickListener(new View.OnClickListener() {
 
             public void onClick(View view) {
                 Intent takeVideoIntent = new Intent(MediaStore.ACTION_VIDEO_CAPTURE);
-                takeVideoIntent.putExtra(MediaStore.EXTRA_OUTPUT,setVideoUri());
                 startActivityForResult(takeVideoIntent, 0);
 
             }
@@ -78,27 +66,28 @@ public class Viewfinder extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        //videoFileUri = data.getData();
-
-        try {
-            mp.setDataSource(videoPath);
-            //mp.prepare();
-            mp.prepare();
-            //mp.setOnPreparedListener(Viewfinder.this);
-        } catch (IOException e) {
-            //if the path doesn't exist, which we don't expect to happen since we just recorded it.
-            //TODO: make something pop up and let the user know an error occurred.
-            e.printStackTrace();
-
-        }
-        mp.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
-
+        videoFileUri = data.getData();
+        videoView.setVideoURI(videoFileUri);
+        videoView.setMediaController(mc);
+        videoView.start();
+        videoView.setOnPreparedListener(new OnPreparedListener() {
             @Override
             public void onPrepared(MediaPlayer mp) {
-                mp.start();
+                mc.setAnchorView(videoView);
+
+
+                mp.setLooping(true);
             }
         });
     }
+
+
+}
+
+
+
+
+/*
 
     public Uri setVideoUri() {
         // Store image in dcim
@@ -109,7 +98,8 @@ public class Viewfinder extends AppCompatActivity {
     }
 
 
-    /**
+    */
+/**
      * Get a file path from a Uri. This will get the the path for Storage Access
      * Framework Documents, as well as the _data field for the MediaStore and
      * other file-based ContentProviders.
@@ -117,7 +107,8 @@ public class Viewfinder extends AppCompatActivity {
      * @param context The context.
      * @param uri The Uri to query.
      * @author paulburke
-     */
+     *//*
+
     public static String getPath(final Context context, final Uri uri) {
 
         final boolean isKitKat = android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.KITKAT;
@@ -180,7 +171,8 @@ public class Viewfinder extends AppCompatActivity {
         return null;
     }
 
-    /**
+    */
+/**
      * Get the value of the data column for this Uri. This is useful for
      * MediaStore Uris, and other file-based ContentProviders.
      *
@@ -189,7 +181,8 @@ public class Viewfinder extends AppCompatActivity {
      * @param selection (Optional) Filter used in the query.
      * @param selectionArgs (Optional) Selection arguments used in the query.
      * @return The value of the _data column, which is typically a file path.
-     */
+     *//*
+
     public static String getDataColumn(Context context, Uri uri, String selection,
                                        String[] selectionArgs) {
 
@@ -214,27 +207,33 @@ public class Viewfinder extends AppCompatActivity {
     }
 
 
-    /**
+    */
+/**
      * @param uri The Uri to check.
      * @return Whether the Uri authority is ExternalStorageProvider.
-     */
+     *//*
+
     public static boolean isExternalStorageDocument(Uri uri) {
         return "com.android.externalstorage.documents".equals(uri.getAuthority());
     }
 
-    /**
+    */
+/**
      * @param uri The Uri to check.
      * @return Whether the Uri authority is DownloadsProvider.
-     */
+     *//*
+
     public static boolean isDownloadsDocument(Uri uri) {
         return "com.android.providers.downloads.documents".equals(uri.getAuthority());
     }
 
-    /**
+    */
+/**
      * @param uri The Uri to check.
      * @return Whether the Uri authority is MediaProvider.
-     */
+     *//*
+
     public static boolean isMediaDocument(Uri uri) {
         return "com.android.providers.media.documents".equals(uri.getAuthority());
     }
-}
+}*/
