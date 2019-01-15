@@ -1,7 +1,12 @@
 package com.jaytechnologies.looper;
 
+import android.Manifest;
+import android.content.ContentResolver;
+import android.content.pm.PackageManager;
 import android.provider.MediaStore;
 import android.support.annotation.Nullable;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.SurfaceHolder;
@@ -16,13 +21,27 @@ import android.media.MediaPlayer.*;
 import android.media.MediaPlayer;
 import 	android.content.Context;
 import 	android.util.*;
+
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import android.database.Cursor;
 import android.provider.DocumentsContract;
 import android.os.Environment;
 import android.content.ContentUris;
 import java.io.File;
+import java.io.RandomAccessFile;
+import java.nio.channels.FileChannel;
 import java.util.Date;
+
+import com.coremedia.iso.IsoFile;
+import com.coremedia.iso.boxes.Container;
+import com.googlecode.mp4parser.*;
+import com.googlecode.mp4parser.authoring.Movie;
+import com.googlecode.mp4parser.authoring.builder.DefaultMp4Builder;
+import com.googlecode.mp4parser.authoring.container.mp4.MovieCreator;
+import com.googlecode.mp4parser.authoring.tracks.h264.H264TrackImpl;
+import com.googlecode.mp4parser.authoring.tracks.h265.H265TrackImpl;
 
 public class Viewfinder extends AppCompatActivity {
 
@@ -42,6 +61,7 @@ public class Viewfinder extends AppCompatActivity {
         mc = new MediaController(this);
 
         Button btnCamera = (Button) findViewById(R.id.btnViewFinder);
+        Button btnVideo3x = findViewById(R.id.video3xBtn);
         //SurfaceView surfaceView = (SurfaceView) findViewById(R.id.surfaceView);
         videoView = findViewById(R.id.videoView);
         //surfaceHolder = surfaceView.getHolder();
@@ -57,6 +77,44 @@ public class Viewfinder extends AppCompatActivity {
             public void onClick(View view) {
                 Intent takeVideoIntent = new Intent(MediaStore.ACTION_VIDEO_CAPTURE);
                 startActivityForResult(takeVideoIntent, 0);
+
+            }
+        });
+
+        btnVideo3x.setOnClickListener(new View.OnClickListener() {
+
+            public void onClick(View view) {
+
+
+
+                    try {
+                    //FileInputStream fi = new FileInputStream(getRealVideoPathFromURI(getContentResolver(),videoFileUri));
+                    //Movie mov = MovieCreator.build(fi.getChannel())
+                        String path = getRealVideoPathFromURI(getContentResolver(),videoFileUri);
+                        Movie mov = MovieCreator.build(path);
+                        System.out.println(path);
+                        //try overwriting old video
+                        Container mp4file = new DefaultMp4Builder().build(mov);
+                        FileChannel fc = new RandomAccessFile(String.format("/storage/emulated/0/DCIM/Camera/NEW.mp4"), "rw").getChannel();
+                        mp4file.writeContainer(fc);
+                        fc.close();
+
+                        File file = new File("/storage/emulated/0/DCIM/Camera/NEW.mp4");
+                        if(file.exists()){
+                            Log.w("mytag","exists");
+                        }
+                        else{
+                            Log.w("mytag","does not exist");
+                        }
+                        videoView.stopPlayback();
+                        videoView.setVideoPath(file.getAbsolutePath());
+                        videoView.start();
+                    }catch(Exception e){
+                    //TODO: we should make sure that it exists before we allow the button to be clicked or something
+                    e.printStackTrace();
+                }
+
+
 
             }
         });
@@ -80,7 +138,22 @@ public class Viewfinder extends AppCompatActivity {
             }
         });
     }
-
+    public static String getRealVideoPathFromURI(ContentResolver contentResolver,
+                                                 Uri contentURI) {
+        Cursor cursor = contentResolver.query(contentURI, null, null, null,
+                null);
+        if (cursor == null)
+            return contentURI.getPath();
+        else {
+            cursor.moveToFirst();
+            int idx = cursor.getColumnIndex(MediaStore.Video.VideoColumns.DATA);
+            try {
+                return cursor.getString(idx);
+            } catch (Exception exception) {
+                return null;
+            }
+        }
+    }
 
 }
 
