@@ -47,7 +47,7 @@ public class AudioVideoChooser extends AppCompatActivity {
         audioChoice.setOnClickListener(new View.OnClickListener() {
 
             public void onClick(View view) {
-                //does nothing... need audio view
+                //does nothing... need audio vieBw
 
             }
         });
