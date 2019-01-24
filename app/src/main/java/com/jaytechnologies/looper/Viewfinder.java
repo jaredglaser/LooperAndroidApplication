@@ -3,6 +3,7 @@ package com.jaytechnologies.looper;
 import android.Manifest;
 import android.content.ContentResolver;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.provider.MediaStore;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
@@ -12,36 +13,37 @@ import android.os.Bundle;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.MediaController;
+import android.widget.TextView;
 import android.widget.VideoView;
 import android.widget.Button;
-import 	android.content.Intent;
-import 	android.net.Uri;
+import android.content.Intent;
+import android.net.Uri;
 import android.media.MediaPlayer.*;
 import android.media.MediaPlayer;
-import 	android.content.Context;
-import 	android.util.*;
+import android.content.Context;
+import android.util.*;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+
 import android.database.Cursor;
 import android.provider.DocumentsContract;
 import android.os.Environment;
 import android.content.ContentUris;
+
 import java.io.File;
 import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
 import java.util.Date;
 
-import com.coremedia.iso.IsoFile;
-import com.coremedia.iso.boxes.Container;
-import com.googlecode.mp4parser.*;
-import com.googlecode.mp4parser.authoring.Movie;
-import com.googlecode.mp4parser.authoring.builder.DefaultMp4Builder;
-import com.googlecode.mp4parser.authoring.container.mp4.MovieCreator;
-import com.googlecode.mp4parser.authoring.tracks.h264.H264TrackImpl;
-import com.googlecode.mp4parser.authoring.tracks.h265.H265TrackImpl;
+import com.arthenica.mobileffmpeg.FFmpeg;
+
+import static com.arthenica.mobileffmpeg.FFmpeg.RETURN_CODE_CANCEL;
+import static com.arthenica.mobileffmpeg.FFmpeg.RETURN_CODE_SUCCESS;
+
 
 public class Viewfinder extends AppCompatActivity {
 
@@ -86,11 +88,29 @@ public class Viewfinder extends AppCompatActivity {
             public void onClick(View view) {
 
 
+                //FileInputStream fi = new FileInputStream(getRealVideoPathFromURI(getContentResolver(),videoFileUri));
+                //Movie mov = MovieCreator.build(fi.getChannel())
+                String path = getRealVideoPathFromURI(getContentResolver(), videoFileUri);
+                String output = Environment.getExternalStoragePublicDirectory(
+                        Environment.DIRECTORY_DCIM).getAbsolutePath();
 
-                    try {
-                    //FileInputStream fi = new FileInputStream(getRealVideoPathFromURI(getContentResolver(),videoFileUri));
-                    //Movie mov = MovieCreator.build(fi.getChannel())
-                        String path = getRealVideoPathFromURI(getContentResolver(),videoFileUri);
+                File file = new File(output,"output.mp4");
+                FFmpeg.execute("-i "+path+" -c:v mpeg4 "+output+"/file2.mp4");
+
+                int rc = FFmpeg.getLastReturnCode();
+                String out = FFmpeg.getLastCommandOutput();
+
+                if (rc == RETURN_CODE_SUCCESS) {
+                    Log.i("jared", "Command execution completed successfully.");
+                } else if (rc == RETURN_CODE_CANCEL) {
+                    Log.i("jared", "Command execution cancelled by user.");
+                } else {
+                    Log.i("jared", String.format("Command execution failed with rc=%d and output=%s.", rc, out));
+                }
+
+
+
+/*
                         Movie mov = MovieCreator.build(path);
                         System.out.println(path);
                         //try overwriting old video
@@ -105,21 +125,16 @@ public class Viewfinder extends AppCompatActivity {
                         }
                         else{
                             Log.w("mytag","does not exist");
-                        }
-                        videoView.stopPlayback();
-                        videoView.setVideoPath(file.getAbsolutePath());
-                        videoView.start();
-                    }catch(Exception e){
-                    //TODO: we should make sure that it exists before we allow the button to be clicked or something
-                    e.printStackTrace();
-                }
-
+                        }*/
+                //videoView.stopPlayback();
+                //videoView.setVideoPath(file.getAbsolutePath());
+                // videoView.start();
 
 
             }
         });
-
     }
+
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
@@ -138,6 +153,7 @@ public class Viewfinder extends AppCompatActivity {
             }
         });
     }
+
     public static String getRealVideoPathFromURI(ContentResolver contentResolver,
                                                  Uri contentURI) {
         Cursor cursor = contentResolver.query(contentURI, null, null, null,
@@ -153,6 +169,14 @@ public class Viewfinder extends AppCompatActivity {
                 return null;
             }
         }
+    }
+
+    private void scanMedia(File file) {
+
+        Uri uri = Uri.fromFile(file);
+        Intent scanFileIntent = new Intent(
+                Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, uri);
+        sendBroadcast(scanFileIntent);
     }
 
 }
@@ -173,14 +197,28 @@ public class Viewfinder extends AppCompatActivity {
 
     */
 /**
-     * Get a file path from a Uri. This will get the the path for Storage Access
-     * Framework Documents, as well as the _data field for the MediaStore and
-     * other file-based ContentProviders.
-     *
-     * @param context The context.
-     * @param uri The Uri to query.
-     * @author paulburke
-     *//*
+ * Get a file path from a Uri. This will get the the path for Storage Access
+ * Framework Documents, as well as the _data field for the MediaStore and
+ * other file-based ContentProviders.
+ *
+ * @param context The context.
+ * @param uri The Uri to query.
+ * @author paulburke
+ * <p>
+ * Get the value of the data column for this Uri. This is useful for
+ * MediaStore Uris, and other file-based ContentProviders.
+ * @param context The context.
+ * @param uri The Uri to query.
+ * @param selection (Optional) Filter used in the query.
+ * @param selectionArgs (Optional) Selection arguments used in the query.
+ * @return The value of the _data column, which is typically a file path.
+ * @param uri The Uri to check.
+ * @return Whether the Uri authority is ExternalStorageProvider.
+ * @param uri The Uri to check.
+ * @return Whether the Uri authority is DownloadsProvider.
+ * @param uri The Uri to check.
+ * @return Whether the Uri authority is MediaProvider.
+ *//*
 
     public static String getPath(final Context context, final Uri uri) {
 
@@ -246,15 +284,15 @@ public class Viewfinder extends AppCompatActivity {
 
     */
 /**
-     * Get the value of the data column for this Uri. This is useful for
-     * MediaStore Uris, and other file-based ContentProviders.
-     *
-     * @param context The context.
-     * @param uri The Uri to query.
-     * @param selection (Optional) Filter used in the query.
-     * @param selectionArgs (Optional) Selection arguments used in the query.
-     * @return The value of the _data column, which is typically a file path.
-     *//*
+ * Get the value of the data column for this Uri. This is useful for
+ * MediaStore Uris, and other file-based ContentProviders.
+ *
+ * @param context The context.
+ * @param uri The Uri to query.
+ * @param selection (Optional) Filter used in the query.
+ * @param selectionArgs (Optional) Selection arguments used in the query.
+ * @return The value of the _data column, which is typically a file path.
+ *//*
 
     public static String getDataColumn(Context context, Uri uri, String selection,
                                        String[] selectionArgs) {
@@ -282,9 +320,9 @@ public class Viewfinder extends AppCompatActivity {
 
     */
 /**
-     * @param uri The Uri to check.
-     * @return Whether the Uri authority is ExternalStorageProvider.
-     *//*
+ * @param uri The Uri to check.
+ * @return Whether the Uri authority is ExternalStorageProvider.
+ *//*
 
     public static boolean isExternalStorageDocument(Uri uri) {
         return "com.android.externalstorage.documents".equals(uri.getAuthority());
@@ -292,9 +330,9 @@ public class Viewfinder extends AppCompatActivity {
 
     */
 /**
-     * @param uri The Uri to check.
-     * @return Whether the Uri authority is DownloadsProvider.
-     *//*
+ * @param uri The Uri to check.
+ * @return Whether the Uri authority is DownloadsProvider.
+ *//*
 
     public static boolean isDownloadsDocument(Uri uri) {
         return "com.android.providers.downloads.documents".equals(uri.getAuthority());
@@ -302,9 +340,9 @@ public class Viewfinder extends AppCompatActivity {
 
     */
 /**
-     * @param uri The Uri to check.
-     * @return Whether the Uri authority is MediaProvider.
-     *//*
+ * @param uri The Uri to check.
+ * @return Whether the Uri authority is MediaProvider.
+ *//*
 
     public static boolean isMediaDocument(Uri uri) {
         return "com.android.providers.media.documents".equals(uri.getAuthority());

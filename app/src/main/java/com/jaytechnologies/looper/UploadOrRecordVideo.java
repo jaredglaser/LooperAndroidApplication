@@ -57,32 +57,17 @@ public class UploadOrRecordVideo extends AppCompatActivity {
         if(requestCode == TAKE_VIDEO) {
             videoFileUri = data.getData();
 
-            String path = getRealVideoPathFromURI(getContentResolver(), videoFileUri);
+            String path = Common.getRealVideoPathFromURI(getContentResolver(), videoFileUri);
 
             //open the video view and send this path
         }
         if(requestCode == SELECT_VIDEO){
-            String path = getRealVideoPathFromURI(getContentResolver(),data.getData());
+            String path = Common.getRealVideoPathFromURI(getContentResolver(),data.getData());
 
             //open the video view and send this path
         }
 
     }
 
-    public static String getRealVideoPathFromURI(ContentResolver contentResolver,
-                                                 Uri contentURI) {
-        Cursor cursor = contentResolver.query(contentURI, null, null, null,
-                null);
-        if (cursor == null)
-            return contentURI.getPath();
-        else {
-            cursor.moveToFirst();
-            int idx = cursor.getColumnIndex(MediaStore.Video.VideoColumns.DATA);
-            try {
-                return cursor.getString(idx);
-            } catch (Exception exception) {
-                return null;
-            }
-        }
-    }
+
 }
